@@ -1,4 +1,4 @@
-from utils.api_handlers_1 import handle_finance_query, is_finance_query
+from api_handlers_1 import handle_finance_query, is_finance_query
 from config import GEMINI_API_KEY
 import google.generativeai as genai
 
