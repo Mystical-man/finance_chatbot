@@ -28,11 +28,8 @@ if "messages" not in st.session_state:
 with st.container():
     for speaker, msg in st.session_state["messages"]:
         align = "right" if speaker == "user" else "left"
-        user_bg = "#4B7398" if speaker == "user" else "#C9F5C4"
+        user_bg = "#D3D3D3" if speaker == "user" else "#008080"
         user_text = "#000000"
-        if st.session_state.get("theme", "light") == "dark":
-            user_bg = "#065F46" if speaker == "user" else "#134E4A"
-            user_text = "#D1FAE5"
 
         st.markdown(
             f"""
@@ -71,3 +68,4 @@ if sent and user_input.strip():
 
     # Refresh UI to reflect new messages
     st.rerun()
+
