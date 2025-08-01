@@ -4,9 +4,9 @@ import streamlit as st
 if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
-from utils.theme_helpers import apply_theme
-from utils.chat_logic_1 import process_user_message
-from utils.api_handlers_1 import is_finance_query
+from theme_helpers import apply_theme
+from chat_logic_1 import process_user_message
+from api_handlers_1 import is_finance_query
 
 # Page settings
 st.set_page_config(page_title="Finance AI Assistant", page_icon=":money_with_wings:", layout="centered")
