@@ -14,12 +14,15 @@ def lookup_finnhub_symbol(company_name):
         data = resp.json()
         results = data.get("result", [])
         for r in results:
-            if r.get("type") == "Equity":
-                return r.get("symbol")
+            if r.get("type") == "Equity" and r.get("symbol"):
+                print(f"[Finnhub lookup] Found symbol for '{company_name}': {r['symbol']}")
+                return r["symbol"]
+        print(f"[Finnhub lookup] No equity symbol found for '{company_name}'")
         return None
     except Exception as e:
-        print(f"Symbol lookup failed for '{company_name}': {e}")
+        print(f"[Finnhub lookup] Error for '{company_name}': {e}")
         return None
+
 
 # Extract symbols from user message using uppercase tickers and company name lookup
 def extract_symbols(user_message):
@@ -28,46 +31,37 @@ def extract_symbols(user_message):
     user_message_lower = user_message.lower()
     detected = set()
 
-    # 1. Typed uppercase tickers (e.g., AAPL, TSLA)
+    # 1. Uppercase tickers
     detected.update(re.findall(r"\b[A-Z]{1,5}\b", user_message))
 
-    # 2. Basic hardcoded company/crypto name mapping
+    # 2. Known name → ticker mappings
     known_symbols = {
-        "apple": "AAPL",
-        "microsoft": "MSFT",
-        "google": "GOOGL",
-        "alphabet": "GOOGL",
-        "amazon": "AMZN",
-        "meta": "META",
-        "facebook": "META",
-        "tesla": "TSLA",
-        "nvidia": "NVDA",
-        "tata": "TATAMOTORS.BSE",
-        "reliance": "RELIANCE.BSE",
-        "infosys": "INFY.BSE",
-        "bitcoin": "BTC-USD",
-        "btc": "BTC-USD",
-        "ethereum": "ETH-USD",
-        "eth": "ETH-USD",
-        "dogecoin": "DOGE-USD",
-        "doge": "DOGE-USD",
+        "apple": "AAPL", "microsoft": "MSFT", "google": "GOOGL", "alphabet": "GOOGL",
+        "amazon": "AMZN", "meta": "META", "facebook": "META", "tesla": "TSLA", "nvidia": "NVDA",
+        "tata": "TATAMOTORS.BSE", "reliance": "RELIANCE.BSE", "infosys": "INFY.BSE",
+        "bitcoin": "BTC-USD", "btc": "BTC-USD", "ethereum": "ETH-USD", "eth": "ETH-USD",
+        "dogecoin": "DOGE-USD", "doge": "DOGE-USD"
     }
-
     for name, symbol in known_symbols.items():
         if name in user_message_lower:
             detected.add(symbol)
 
-    # 3. Finnhub fallback if nothing found yet
+    # 3. Finnhub fallback: Try each word
     if not detected:
+        print("[Symbol Extraction] No known tickers found. Using Finnhub fallback...")
         words = re.findall(r"\b[a-z]{3,20}\b", user_message_lower)
         for word in words:
             symbol = lookup_finnhub_symbol(word)
             if symbol:
                 detected.add(symbol)
-                break  # Stop after first valid result
+                # don’t break — collect more!
+    
+    if not detected:
+        print("[Symbol Extraction] No symbols found. Skipping finance logic.")
+        return []
 
-    return list(detected) if detected else ["AAPL"]
-
+    print(f"[Symbol Extraction] Final symbol list: {detected}")
+    return list(detected)
 
 # Fetch stock price from Finnhub
 def fetch_finnhub_price(symbol):
@@ -107,8 +101,10 @@ def fetch_currencyfreaks_usd_to_eur():
         return f"CurrencyFreaks error: {e}"
 
 # Main handler for finance queries
-def handle_finance_query(user_message: str) -> (str, bool):
+def handle_finance_query(user_message: str) -> tuple[str, bool]:
     symbols = extract_symbols(user_message)
+    if not symbols:
+        return ("", False)
     all_prices_text = []
 
     # Use only Finnhub for price lookup
@@ -132,7 +128,7 @@ def handle_finance_query(user_message: str) -> (str, bool):
         "Stock prices:\n" + "\n".join(all_prices_text) +
         ("\n\n" + "\n".join(news_text) if news_text else "") +
         f"\n\nCurrency rate:\n{currency_info}" +
-        f"\n\nUser query: {user_message}\nPlease answer ONLY based on the above data."
+        f"\n\nUser query: Summarize{user_message}\nPlease answer ONLY based on the above data."
     )
 
     # Check if price data is meaningful
